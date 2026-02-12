@@ -74,6 +74,16 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Login and get access & refresh tokens
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body LoginRequest true "Login payload"
+// @Success 200 {object} adapters.LoginResponse "Login successful"
+// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
+// @Router /login [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	var body struct {
 		RefreshToken string `json:"refresh_token"`
@@ -98,6 +108,16 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	})
 }
 
+// Create item godoc
+// @Summary Create new item
+// @Description Register new item to database
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body LoginRequest true "Create item payload"
+// @Success 200 {object} adapters.LoginResponse "Create successful"
+// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
+// @Router /api/ [post]
 func (h *ItemHandler) Create(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 
@@ -126,6 +146,15 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusCreated)
 }
 
+// Read item godoc
+// @Summary List items
+// @Description List all items owned by user
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} adapters.ReadItemResponse "Read successful"
+// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
+// @Router /api/ [post]
 func (h *ItemHandler) List(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 
@@ -139,6 +168,16 @@ func (h *ItemHandler) List(c *fiber.Ctx) error {
 	return c.JSON(items)
 }
 
+// Update item godoc
+// @Summary Update existed item
+// @Description Edit existed item information
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body UpdateItemRequest true "Create item payload"
+// @Success 200 {object} adapters.UpdateItemResponse "Update successful"
+// @Failure 401 {object} adapters.UpdateItemResponse "Invalid credentials"
+// @Router /api/ [post]
 func (h *ItemHandler) Update(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 
@@ -169,6 +208,16 @@ func (h *ItemHandler) Update(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+// Delete item godoc
+// @Summary Delete owned item
+// @Description Deleted item from database
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body DeleteItemRequest true "Create item payload"
+// @Success 200 {object} adapters.LoginResponse "Delete successful"
+// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
+// @Router /api/ [post]
 func (h *ItemHandler) Delete(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint)
 

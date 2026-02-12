@@ -102,12 +102,11 @@ func main() {
 	app.Post("/login", authHandler.Login)
 	app.Post("/refresh", authHandler.Refresh)
 
-	api := app.Group("/api", adapters.Protected(tokenSvc))
+	reg := app.Group("/register", adapters.Protected(tokenSvc))
+	reg.Post("/sam", itemHandler.Create)
+	reg.Post("/box", itemHandler.List)
 
-	api.Post("/items", itemHandler.Create)
-	api.Get("/items", itemHandler.List)
-	api.Put("/items/:id", itemHandler.Update)
-	api.Delete("/items/:id", itemHandler.Delete)
-
+	insp := app.Group("/inspect", adapters.Protected(tokenSvc))
+	insp.Post("/:id", itemHandler.Create)
 	app.Listen(":8000")
 }

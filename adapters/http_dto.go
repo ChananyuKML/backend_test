@@ -9,14 +9,28 @@ type RegisterResponse struct {
 	Message string `json:"message" example:"registered"`
 }
 
-type LoginRequest struct {
-	Email    string `json:"email" example:"test@example.com"`
-	Password string `json:"password" example:"password123"`
+type CreateItemRequest struct {
+	Description string
 }
 
-type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+type CreateItemResponse struct {
+	Message string `json:"message" example:"registered"`
+}
+
+type ReadItemResponse struct {
+	Message string `json:"message" example:"registered"`
+}
+
+type UpdateItemRequest struct {
+	Description string
+}
+
+type UpdateItemResponse struct {
+	Message string `json:"message" example:"registered"`
+}
+
+type DeleteItemResponse struct {
+	Message string `json:"message" example:"registered"`
 }
 
 type ErrorResponse struct {
