@@ -17,6 +17,7 @@ import (
 	"hole/adapters"
 	_ "hole/docs" // IMPORTANT
 	"hole/entities"
+	"hole/repository"
 	"hole/use_cases"
 )
 
@@ -80,15 +81,15 @@ func main() {
 
 	fmt.Println("Database migration completed!")
 
-	userRepo := adapters.NewUserRepository(db)
-	refreshRepo := adapters.NewRefreshTokenRepository(db)
-	itemRepo := adapters.NewItemRepository(db)
-	tokenSvc := adapters.NewJWTService()
+	userRepo := repository.NewUserRepository(db)
+	refreshRepo := repository.NewRefreshTokenRepository(db)
+	itemRepo := repository.NewItemRepository(db)
+	jwtService := adapters.NewJWTService()
 
 	authUC := use_cases.NewAuthUseCase(
 		userRepo,
 		refreshRepo,
-		tokenSvc,
+		jwtService,
 	)
 
 	itemUC := use_cases.NewItemUseCase(
@@ -100,13 +101,18 @@ func main() {
 
 	app.Post("/register", authHandler.Register)
 	app.Post("/login", authHandler.Login)
-	app.Post("/refresh", authHandler.Refresh)
 
-	reg := app.Group("/register", adapters.Protected(tokenSvc))
-	reg.Post("/sam", itemHandler.Create)
-	reg.Post("/box", itemHandler.List)
+	app.Use(adapters.Protected(jwtService))
 
-	insp := app.Group("/inspect", adapters.Protected(tokenSvc))
-	insp.Post("/:id", itemHandler.Create)
+	app.Post("/items", itemHandler.Create)
+	app.Get("/items", itemHandler.List)
+	app.Put("/items/:id", itemHandler.Update)
+	app.Delete("/items/:id", itemHandler.Delete)
+
+	app.Post("/logout", authHandler.Logout)
+	// app.Post("/box", itemHandler.List)
+
+	// insp := app.Group("/inspect")
+	// insp.Post("/:id", itemHandler.Create)
 	app.Listen(":8000")
 }

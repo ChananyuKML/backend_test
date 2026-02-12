@@ -3,10 +3,8 @@ package adapters
 import (
 	"errors"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -39,7 +37,7 @@ func (j *JWTService) GenerateRefreshToken(userID uint) (string, error) {
 	return token.SignedString([]byte(os.Getenv("JWT_REFRESH_SECRET")))
 }
 
-func (j *JWTService) ValidateAccessToken(tokenStr string) (uint, error) {
+func (j *JWTService) ValidateAccessToken(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -47,50 +45,42 @@ func (j *JWTService) ValidateAccessToken(tokenStr string) (uint, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 
-	if err != nil || !token.Valid {
-		return 0, errors.New("invalid token")
+	if err != nil || token == nil || !token.Valid {
+		return nil, errors.New("invalid token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, errors.New("invalid claims")
+		return nil, errors.New("invalid claims")
 	}
 
-	userID, ok := claims["user_id"].(float64)
-	if !ok {
-		return 0, errors.New("user_id missing")
-	}
-
-	return uint(userID), nil
+	return claims, nil
 }
 
-func ParseToken(tokenStr string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
+// func ParseToken(tokenStr string) (jwt.MapClaims, error) {
+// 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+// 		return jwtKey, nil
+// 	})
 
-	if err != nil || !token.Valid {
-		return nil, err
-	}
+// 	if err != nil || !token.Valid {
+// 		return nil, err
+// 	}
 
-	return token.Claims.(jwt.MapClaims), nil
-}
+// 	return token.Claims.(jwt.MapClaims), nil
+// }
 
-func Protected(jwtService *JWTService) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		auth := c.Get("Authorization")
-		if auth == "" {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
+// func Protected(c *fiber.Ctx) error {
+// 	auth := c.Cookies("auth_token")
 
-		tokenStr := strings.TrimPrefix(auth, "Bearer ")
+// 	if auth == "" {
+// 		return c.SendStatus(fiber.StatusUnauthorized)
+// 	}
 
-		userID, err := jwtService.ValidateAccessToken(tokenStr)
-		if err != nil {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
+// 	claims, err := h.uc.ValidateAccessToken(auth)
 
-		c.Locals("user_id", userID)
-		return c.Next()
-	}
-}
+// 	if err != nil {
+// 		return c.SendStatus(fiber.StatusUnauthorized)
+// 	}
+// 	c.Locals("user_id", claims["user_id"])
+// 	return c.Next()
+// }

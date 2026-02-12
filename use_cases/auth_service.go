@@ -5,6 +5,7 @@ import (
 	"hole/entities"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,7 +23,7 @@ type RefreshTokenRepository interface {
 type TokenService interface {
 	GenerateAccessToken(userID uint) (string, error)
 	GenerateRefreshToken(userID uint) (string, error)
-	ValidateAccessToken(token string) (uint, error)
+	ValidateAccessToken(token string) (jwt.MapClaims, error)
 }
 
 type AuthUseCase struct {
@@ -35,16 +36,6 @@ func NewAuthUseCase(r UserRepository, re RefreshTokenRepository, t TokenService)
 	return &AuthUseCase{repo: r, refreshRepo: re, token: t}
 }
 
-// Register godoc
-// @Summary Register a new user
-// @Description Create a new user account
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body RegisterRequest true "Register payload"
-// @Success 201 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Router /register [post]
 func (u *AuthUseCase) Register(email, password string) error {
 	return u.repo.Create(&entities.User{
 		Email:    email,

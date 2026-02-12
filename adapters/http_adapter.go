@@ -2,7 +2,7 @@ package adapters
 
 import (
 	"hole/use_cases"
-	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,16 +23,6 @@ func NewItemHandler(uc *use_cases.ItemUseCase) *ItemHandler {
 	return &ItemHandler{uc}
 }
 
-// Register godoc
-// @Summary Register a new user
-// @Description Create a new user account
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body RegisterRequest true "Register payload"
-// @Success 200 {object} adapters.RegisterResponse "Registration successful"
-// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
-// @Router /register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req struct {
 		Email    string `json:"email"`
@@ -40,22 +30,14 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	}
 	c.BodyParser(&req)
 
-	if err := h.uc.Register(req.Email, req.Password); err != nil {
+	err := h.uc.Register(req.Email, req.Password)
+	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
+
 	return c.JSON(fiber.Map{"message": "registered"})
 }
 
-// Login godoc
-// @Summary Login user
-// @Description Login and get access & refresh tokens
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body LoginRequest true "Login payload"
-// @Success 200 {object} adapters.LoginResponse "Login successful"
-// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
-// @Router /login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req struct {
 		Email    string `json:"email"`
@@ -68,61 +50,82 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	acc := new(fiber.Cookie)
+	acc.Name = "auth_token"
+	acc.Value = access
+	acc.Expires = time.Now().Add(30 * time.Minute)
+	acc.HTTPOnly = true
+	acc.Secure = true
+	acc.SameSite = "Lax"
+
+	ref := new(fiber.Cookie)
+	ref.Name = "ref_token"
+	ref.Value = refresh
+	ref.HTTPOnly = true
+	ref.Secure = true
+	ref.SameSite = "Lax"
+
+	c.Cookie(acc)
+	c.Cookie(ref)
+
 	return c.JSON(fiber.Map{
-		"access_token":  access,
-		"refresh_token": refresh,
+		"message": "login sucessfully ",
 	})
 }
 
-// Login godoc
-// @Summary Login user
-// @Description Login and get access & refresh tokens
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body LoginRequest true "Login payload"
-// @Success 200 {object} adapters.LoginResponse "Login successful"
-// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
-// @Router /login [post]
-func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
-	var body struct {
-		RefreshToken string `json:"refresh_token"`
-	}
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour), // expire immediately
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
 
-	if err := c.BodyParser(&body); err != nil || body.RefreshToken == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
-		})
-	}
+	c.Cookie(&fiber.Cookie{
+		Name:     "ref_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
+	})
 
-	access, refresh, err := h.uc.Refresh(body.RefreshToken)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"access_token":  access,
-		"refresh_token": refresh,
+	return c.JSON(fiber.Map{
+		"message": "logged out successfully",
 	})
 }
 
-// Create item godoc
-// @Summary Create new item
-// @Description Register new item to database
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body LoginRequest true "Create item payload"
-// @Success 200 {object} adapters.LoginResponse "Create successful"
-// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
-// @Router /api/ [post]
+// func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
+// 	var body struct {
+// 		RefreshToken string `json:"refresh_token"`
+// 	}
+
+// 	if err := c.BodyParser(&body); err != nil || body.RefreshToken == "" {
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "invalid request body",
+// 		})
+// 	}
+
+// 	access, refresh, err := h.uc.Refresh(body.RefreshToken)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+// 			"error": err.Error(),
+// 		})
+// 	}
+
+// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"access_token":  access,
+// 		"refresh_token": refresh,
+// 	})
+// }
+
 func (h *ItemHandler) Create(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint)
 
 	var req struct {
-		Description string `json:"description"`
+		ProductName string `json:"name"`
+		ProductDesc string `json:"desc"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -131,13 +134,18 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.Description == "" {
+	if req.ProductName == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "description is required",
+			"error": "Product name is required is required",
+		})
+	}
+	if req.ProductDesc == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Product description is required",
 		})
 	}
 
-	if err := h.uc.CreateItem(userID, req.Description); err != nil {
+	if err := h.uc.CreateItem(req.ProductName, req.ProductDesc); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to create item",
 		})
@@ -146,19 +154,9 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusCreated)
 }
 
-// Read item godoc
-// @Summary List items
-// @Description List all items owned by user
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} adapters.ReadItemResponse "Read successful"
-// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
-// @Router /api/ [post]
 func (h *ItemHandler) List(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint)
 
-	items, err := h.uc.GetMyItems(userID)
+	items, err := h.uc.GetAllItems()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to fetch items",
@@ -168,29 +166,38 @@ func (h *ItemHandler) List(c *fiber.Ctx) error {
 	return c.JSON(items)
 }
 
-// Update item godoc
-// @Summary Update existed item
-// @Description Edit existed item information
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body UpdateItemRequest true "Create item payload"
-// @Success 200 {object} adapters.UpdateItemResponse "Update successful"
-// @Failure 401 {object} adapters.UpdateItemResponse "Invalid credentials"
-// @Router /api/ [post]
-func (h *ItemHandler) Update(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint)
+// func (h *ItemHandler) List(c *fiber.Ctx) error {
+// 	userID := c.Locals("user_id").(uint)
 
-	idParam := c.Params("id")
-	itemID, err := strconv.Atoi(idParam)
+// 	items, err := h.uc.GetMyItems(userID)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"error": "failed to fetch items",
+// 		})
+// 	}
+
+// 	return c.JSON(items)
+// }
+
+func (h *ItemHandler) Update(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid item id",
+			"error": "Invalid ID format",
 		})
 	}
 
+	// idParam := c.Params("id")
+	// itemID, err := strconv.Atoi(idParam)
+	// if err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "invalid item id",
+	// 	})
+	// }
+
 	var req struct {
-		Description string `json:"description"`
+		ProductName string `json:"name"`
+		ProductDesc string `json:"desc"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -199,39 +206,26 @@ func (h *ItemHandler) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.uc.UpdateItem(uint(itemID), userID, req.Description); err != nil {
+	if err := h.uc.UpdateItem(uint(id), req.ProductName, req.ProductDesc); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "item not found or not owned by user",
+			"error": "item not found",
 		})
 	}
 
 	return c.SendStatus(fiber.StatusOK)
 }
 
-// Delete item godoc
-// @Summary Delete owned item
-// @Description Deleted item from database
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param body body DeleteItemRequest true "Create item payload"
-// @Success 200 {object} adapters.LoginResponse "Delete successful"
-// @Failure 401 {object} adapters.ErrorResponse "Invalid credentials"
-// @Router /api/ [post]
 func (h *ItemHandler) Delete(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint)
-
-	idParam := c.Params("id")
-	itemID, err := strconv.Atoi(idParam)
+	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid item id",
+			"error": "Invalid ID format",
 		})
 	}
 
-	if err := h.uc.DeleteItem(uint(itemID), userID); err != nil {
+	if err := h.uc.DeleteItem(uint(id)); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "item not found or not owned by user",
+			"error": err.Error(),
 		})
 	}
 

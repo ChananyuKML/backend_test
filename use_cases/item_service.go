@@ -7,9 +7,10 @@ import (
 type ItemRepository interface {
 	Create(item *entities.Item) error
 	FindByOwnerID(ownerID uint) ([]*entities.Item, error)
-	FindByIDAndOwner(id, ownerID uint) (*entities.Item, error)
-	Update(item *entities.Item) error
-	Delete(id, ownerID uint) error
+	// FindByIDAndOwner(id, ownerID uint) (*entities.Item, error)
+	Update(id uint, name, desc string) error
+	Delete(id uint) error
+	ListItem() ([]*entities.Item, error)
 }
 
 type ItemUseCase struct {
@@ -20,10 +21,10 @@ func NewItemUseCase(repo ItemRepository) *ItemUseCase {
 	return &ItemUseCase{repo: repo}
 }
 
-func (uc *ItemUseCase) CreateItem(ownerID uint, desc string) error {
+func (uc *ItemUseCase) CreateItem(name, desc string) error {
 	return uc.repo.Create(&entities.Item{
-		OwnerID:     ownerID,
-		Description: desc,
+		ProductName: name,
+		ProductDesc: desc,
 	})
 }
 
@@ -31,14 +32,14 @@ func (uc *ItemUseCase) GetMyItems(ownerID uint) ([]*entities.Item, error) {
 	return uc.repo.FindByOwnerID(ownerID)
 }
 
-func (uc *ItemUseCase) UpdateItem(id, ownerID uint, desc string) error {
-	return uc.repo.Update(&entities.Item{
-		ID:          id,
-		OwnerID:     ownerID,
-		Description: desc,
-	})
+func (uc *ItemUseCase) GetAllItems() ([]*entities.Item, error) {
+	return uc.repo.ListItem()
 }
 
-func (uc *ItemUseCase) DeleteItem(id, ownerID uint) error {
-	return uc.repo.Delete(id, ownerID)
+func (uc *ItemUseCase) UpdateItem(id uint, name, desc string) error {
+	return uc.repo.Update(id, name, desc)
+}
+
+func (uc *ItemUseCase) DeleteItem(id uint) error {
+	return uc.repo.Delete(id)
 }

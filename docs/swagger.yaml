@@ -1,100 +1,10 @@
-definitions:
-  adapters.ErrorResponse:
-    properties:
-      error:
-        example: invalid credentials
-        type: string
-    type: object
-  adapters.LoginRequest:
-    properties:
-      email:
-        example: test@example.com
-        type: string
-      password:
-        example: password123
-        type: string
-    type: object
-  adapters.LoginResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-    type: object
-  adapters.RegisterRequest:
-    properties:
-      email:
-        example: test@example.com
-        type: string
-      password:
-        example: password123
-        type: string
-    type: object
-  adapters.RegisterResponse:
-    properties:
-      message:
-        example: registered
-        type: string
-    type: object
 host: localhost:8000
 info:
   contact: {}
   description: Authentication API with JWT & Refresh Token
   title: Hole Auth API
   version: "1.0"
-paths:
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Login and get access & refresh tokens
-      parameters:
-      - description: Login payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/adapters.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Login successful
-          schema:
-            $ref: '#/definitions/adapters.LoginResponse'
-        "401":
-          description: Invalid credentials
-          schema:
-            $ref: '#/definitions/adapters.ErrorResponse'
-      summary: Login user
-      tags:
-      - Auth
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Create a new user account
-      parameters:
-      - description: Register payload
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/adapters.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Registration successful
-          schema:
-            $ref: '#/definitions/adapters.RegisterResponse'
-        "401":
-          description: Invalid credentials
-          schema:
-            $ref: '#/definitions/adapters.ErrorResponse'
-      summary: Register a new user
-      tags:
-      - Auth
+paths: {}
 securityDefinitions:
   BearerAuth:
     in: header
