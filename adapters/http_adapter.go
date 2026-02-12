@@ -23,6 +23,16 @@ func NewItemHandler(uc *use_cases.ItemUseCase) *ItemHandler {
 	return &ItemHandler{uc}
 }
 
+// Register godoc
+// @Summary      Register a new user
+// @Description  Create a new user account with email and password
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      object  true  "Registration Info"
+// @Success      200      {object}  map[string]string
+// @Failure      400      {object}  map[string]string
+// @Router       /register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req struct {
 		Email    string `json:"email"`
@@ -38,6 +48,16 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "registered"})
 }
 
+// Login godoc
+// @Summary      Login user
+// @Description  Authenticate user and set auth_token and ref_token cookies
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      object  true  "Login Credentials"
+// @Success      200      {object}  map[string]string
+// @Failure      401      {object}  map[string]string
+// @Router       /login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req struct {
 		Email    string `json:"email"`
@@ -121,6 +141,15 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 // 	})
 // }
 
+// Create godoc
+// @Summary      Create Item
+// @Tags         items
+// @Accept       json
+// @Produce      json
+// @Param        request body adapters.CreateItemRequest true "Item Details"
+// @Success      201 {object} adapters.AuthResponse
+// @Failure      400 {object} adapters.ErrorResponse
+// @Router       /items [post]
 func (h *ItemHandler) Create(c *fiber.Ctx) error {
 
 	var req struct {
@@ -154,6 +183,14 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusCreated)
 }
 
+// ListItems godoc
+// @Summary      List all items
+// @Description  Fetch all products from the database
+// @Tags         items
+// @Produce      json
+// @Success      200  {array}   entities.Item
+// @Failure      500  {object}  map[string]string
+// @Router       /items [get]
 func (h *ItemHandler) List(c *fiber.Ctx) error {
 
 	items, err := h.uc.GetAllItems()
@@ -179,6 +216,16 @@ func (h *ItemHandler) List(c *fiber.Ctx) error {
 // 	return c.JSON(items)
 // }
 
+// Update godoc
+// @Summary      Update Item
+// @Tags         items
+// @Accept       json
+// @Produce      json
+// @Param        id      path int                       true "Product ID" example(1)
+// @Param        request body adapters.UpdateItemRequest true "New Item Data"
+// @Success      200 {object} adapters.AuthResponse
+// @Failure      404 {object} adapters.ErrorResponse
+// @Router       /items/{id} [put]
 func (h *ItemHandler) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
@@ -215,6 +262,14 @@ func (h *ItemHandler) Update(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+// DeleteItem godoc
+// @Summary      Delete an item
+// @Description  Remove a product by ID
+// @Tags         items
+// @Param        id   path      int  true  "Item ID"
+// @Success      204  {string}  string "No Content"
+// @Failure      404  {object}  map[string]string
+// @Router       /items/{id} [delete]
 func (h *ItemHandler) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {

@@ -1,38 +1,34 @@
 package adapters
 
-type RegisterRequest struct {
+// --- Auth DTOs ---
+
+type AuthRequest struct {
 	Email    string `json:"email" example:"test@example.com"`
 	Password string `json:"password" example:"password123"`
 }
 
-type RegisterResponse struct {
-	Message string `json:"message" example:"registered"`
+type AuthResponse struct {
+	Message string `json:"message" example:"login successful"`
 }
+
+// --- Item DTOs ---
 
 type CreateItemRequest struct {
-	Description string
-}
-
-type CreateItemResponse struct {
-	Message string `json:"message" example:"registered"`
-}
-
-type ReadItemResponse struct {
-	Message string `json:"message" example:"registered"`
+	ProductName string `json:"name" example:"iphone 71"`
+	ProductDesc string `json:"desc" example:"Latest model with 128GB storage"`
 }
 
 type UpdateItemRequest struct {
-	Description string
+	ProductName string `json:"name" example:"iphone 71"`
+	ProductDesc string `json:"desc" example:"Updated model with 256GB storage"`
 }
 
-type UpdateItemResponse struct {
-	Message string `json:"message" example:"registered"`
-}
-
-type DeleteItemResponse struct {
-	Message string `json:"message" example:"registered"`
+type ItemResponse struct {
+	ProductID   uint   `json:"product_id" example:"1"`
+	ProductName string `json:"name" example:"iphone 71"`
+	ProductDesc string `json:"desc" example:"Latest model"`
 }
 
 type ErrorResponse struct {
-	Error string `json:"error" example:"invalid credentials"`
+	Error string `json:"error" example:"item not found"`
 }

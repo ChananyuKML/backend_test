@@ -1,10 +1,208 @@
+definitions:
+  adapters.AuthResponse:
+    properties:
+      message:
+        example: login successful
+        type: string
+    type: object
+  adapters.CreateItemRequest:
+    properties:
+      desc:
+        example: Latest model with 128GB storage
+        type: string
+      name:
+        example: iphone 71
+        type: string
+    type: object
+  adapters.ErrorResponse:
+    properties:
+      error:
+        example: item not found
+        type: string
+    type: object
+  adapters.UpdateItemRequest:
+    properties:
+      desc:
+        example: Updated model with 256GB storage
+        type: string
+      name:
+        example: iphone 71
+        type: string
+    type: object
+  entities.Item:
+    properties:
+      productDesc:
+        type: string
+      productID:
+        type: integer
+      productName:
+        type: string
+    type: object
 host: localhost:8000
 info:
   contact: {}
   description: Authentication API with JWT & Refresh Token
   title: Hole Auth API
   version: "1.0"
-paths: {}
+paths:
+  /items:
+    get:
+      description: Fetch all products from the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Item'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all items
+      tags:
+      - items
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Item Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/adapters.CreateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/adapters.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/adapters.ErrorResponse'
+      summary: Create Item
+      tags:
+      - items
+  /items/{id}:
+    delete:
+      description: Remove a product by ID
+      parameters:
+      - description: Item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete an item
+      tags:
+      - items
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID
+        example: 1
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New Item Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/adapters.UpdateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/adapters.AuthResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/adapters.ErrorResponse'
+      summary: Update Item
+      tags:
+      - items
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and set auth_token and ref_token cookies
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: Registration Info
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - auth
 securityDefinitions:
   BearerAuth:
     in: header
