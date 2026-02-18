@@ -67,7 +67,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: 'message: item created'
           schema:
             type: string
         "400":

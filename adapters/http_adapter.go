@@ -159,7 +159,7 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        request body      CreateItemRequest  true "Item Details"
-// @Success      201     {string}  string "Created"
+// @Success      201     {string}  map[string]string "message: item created"
 // @Failure      400     {object}  map[string]string "error: invalid request body"
 // @Failure      500     {object}  map[string]string "error: failed to create item"
 // @Router       /items [post]

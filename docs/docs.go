@@ -67,7 +67,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "message: item created",
                         "schema": {
                             "type": "string"
                         }
