@@ -1,41 +1,29 @@
 definitions:
-  adapters.AuthResponse:
+  adapters.AuthRequest:
     properties:
-      message:
-        example: login successful
+      email:
+        example: test@example.com
+        type: string
+      password:
+        example: password123
         type: string
     type: object
   adapters.CreateItemRequest:
     properties:
-      desc:
+      productDesc:
         example: Latest model with 128GB storage
         type: string
-      name:
+      productName:
         example: iphone 71
-        type: string
-    type: object
-  adapters.ErrorResponse:
-    properties:
-      error:
-        example: item not found
         type: string
     type: object
   adapters.UpdateItemRequest:
     properties:
-      desc:
+      productDesc:
         example: Updated model with 256GB storage
         type: string
-      name:
-        example: iphone 71
-        type: string
-    type: object
-  entities.Item:
-    properties:
-      productDesc:
-        type: string
-      productID:
-        type: integer
       productName:
+        example: iphone 71
         type: string
     type: object
 host: localhost:8000
@@ -52,16 +40,14 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'message: [items...]'
           schema:
-            items:
-              $ref: '#/definitions/entities.Item'
-            type: array
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       summary: List all items
       tags:
@@ -69,6 +55,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Add a new item to the store
       parameters:
       - description: Item Details
         in: body
@@ -82,11 +69,19 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/adapters.AuthResponse'
+            type: string
         "400":
-          description: Bad Request
+          description: 'error: invalid request body'
           schema:
-            $ref: '#/definitions/adapters.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 'error: failed to create item'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Create Item
       tags:
       - items
@@ -95,17 +90,26 @@ paths:
       description: Remove a product by ID
       parameters:
       - description: Item ID
+        example: 1
         in: path
         name: id
         required: true
         type: integer
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: 'message: item deleted'
           schema:
-            type: string
-        "404":
-          description: Not Found
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: Invalid ID format'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: forbidden'
           schema:
             additionalProperties:
               type: string
@@ -116,6 +120,7 @@ paths:
     put:
       consumes:
       - application/json
+      description: Update product name and description by ID
       parameters:
       - description: Product ID
         example: 1
@@ -133,13 +138,23 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'message: item updated'
           schema:
-            $ref: '#/definitions/adapters.AuthResponse'
-        "404":
-          description: Not Found
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'error: Invalid ID format'
           schema:
-            $ref: '#/definitions/adapters.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: 'error: forbidden'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Update Item
       tags:
       - items
@@ -154,18 +169,18 @@ paths:
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/adapters.AuthRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'message: login successfully'
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: Unauthorized
+          description: 'message: fail to login'
           schema:
             additionalProperties:
               type: string
@@ -184,18 +199,18 @@ paths:
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/adapters.AuthRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'message: registered'
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Bad Request
+          description: 'message: registration failed'
           schema:
             additionalProperties:
               type: string

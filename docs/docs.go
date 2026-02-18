@@ -27,26 +27,23 @@ const docTemplate = `{
                 "summary": "List all items",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "message: [items...]",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/entities.Item"
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
             },
             "post": {
+                "description": "Add a new item to the store",
                 "consumes": [
                     "application/json"
                 ],
@@ -72,13 +69,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/adapters.AuthResponse"
+                            "type": "string"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "error: invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/adapters.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error: failed to create item",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -86,6 +95,7 @@ const docTemplate = `{
         },
         "/items/{id}": {
             "put": {
+                "description": "Update product name and description by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -117,15 +127,30 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "message: item updated",
                         "schema": {
-                            "$ref": "#/definitions/adapters.AuthResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "error: Invalid ID format",
                         "schema": {
-                            "$ref": "#/definitions/adapters.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -139,6 +164,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
+                        "example": 1,
                         "description": "Item ID",
                         "name": "id",
                         "in": "path",
@@ -146,14 +172,26 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content",
+                    "200": {
+                        "description": "message: item deleted",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "error: Invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "error: forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -184,13 +222,13 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/adapters.AuthRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "message: login successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -199,7 +237,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "message: fail to login",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -230,13 +268,13 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/adapters.AuthRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "message: registered",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -245,7 +283,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "message: registration failed",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -258,61 +296,42 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "adapters.AuthResponse": {
+        "adapters.AuthRequest": {
             "type": "object",
             "properties": {
-                "message": {
+                "email": {
                     "type": "string",
-                    "example": "login successful"
+                    "example": "test@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password123"
                 }
             }
         },
         "adapters.CreateItemRequest": {
             "type": "object",
             "properties": {
-                "desc": {
+                "productDesc": {
                     "type": "string",
                     "example": "Latest model with 128GB storage"
                 },
-                "name": {
+                "productName": {
                     "type": "string",
                     "example": "iphone 71"
-                }
-            }
-        },
-        "adapters.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "item not found"
                 }
             }
         },
         "adapters.UpdateItemRequest": {
             "type": "object",
             "properties": {
-                "desc": {
+                "productDesc": {
                     "type": "string",
                     "example": "Updated model with 256GB storage"
                 },
-                "name": {
+                "productName": {
                     "type": "string",
                     "example": "iphone 71"
-                }
-            }
-        },
-        "entities.Item": {
-            "type": "object",
-            "properties": {
-                "productDesc": {
-                    "type": "string"
-                },
-                "productID": {
-                    "type": "integer"
-                },
-                "productName": {
-                    "type": "string"
                 }
             }
         }

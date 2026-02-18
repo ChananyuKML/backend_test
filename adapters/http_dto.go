@@ -8,25 +8,26 @@ type AuthRequest struct {
 }
 
 type AuthResponse struct {
-	Message string `json:"message" example:"login successful"`
+	Message string `json:"message" example:"operation successful"`
+	Error   string `json:"error" example:""`
 }
 
 // --- Item DTOs ---
 
 type CreateItemRequest struct {
-	ProductName string `json:"name" example:"iphone 71"`
-	ProductDesc string `json:"desc" example:"Latest model with 128GB storage"`
+	ProductName string `json:"productName" example:"iphone 71"`
+	ProductDesc string `json:"productDesc" example:"Latest model with 128GB storage"`
 }
 
 type UpdateItemRequest struct {
-	ProductName string `json:"name" example:"iphone 71"`
-	ProductDesc string `json:"desc" example:"Updated model with 256GB storage"`
+	ProductName string `json:"productName" example:"iphone 71"`
+	ProductDesc string `json:"productDesc" example:"Updated model with 256GB storage"`
 }
 
 type ItemResponse struct {
-	ProductID   uint   `json:"product_id" example:"1"`
-	ProductName string `json:"name" example:"iphone 71"`
-	ProductDesc string `json:"desc" example:"Latest model"`
+	ProductID   uint   `json:"productID" example:"1"`
+	ProductName string `json:"productName" example:"iphone 71"`
+	ProductDesc string `json:"productDesc" example:"Latest model"`
 }
 
 type ErrorResponse struct {

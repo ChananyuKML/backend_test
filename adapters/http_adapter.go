@@ -29,9 +29,9 @@ func NewItemHandler(uc *use_cases.ItemUseCase) *ItemHandler {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request  body      object  true  "Registration Info"
-// @Success      200      {object}  map[string]string
-// @Failure      400      {object}  map[string]string
+// @Param        request  body      AuthRequest  true  "Registration Info"
+// @Success      200      {object}  map[string]string "message: registered"
+// @Failure      400      {object}  map[string]string "message: registration failed"
 // @Router       /register [post]
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req struct {
@@ -42,10 +42,16 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 
 	err := h.uc.Register(req.Email, req.Password)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(400).JSON(fiber.Map{
+			"message": "registration failed ",
+			"error":   err.Error(),
+		})
 	}
 
-	return c.JSON(fiber.Map{"message": "registered"})
+	return c.JSON(fiber.Map{
+		"message": "registered ",
+		"error":   " ",
+	})
 }
 
 // Login godoc
@@ -54,9 +60,9 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request  body      object  true  "Login Credentials"
-// @Success      200      {object}  map[string]string
-// @Failure      401      {object}  map[string]string
+// @Param        request  body      AuthRequest  true  "Login Credentials"
+// @Success      200      {object}  map[string]string "message: login successfully"
+// @Failure      401      {object}  map[string]string "message: fail to login"
 // @Router       /login [post]
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req struct {
@@ -67,7 +73,10 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	access, refresh, err := h.uc.Login(req.Email, req.Password)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(401).JSON(fiber.Map{
+			"message": "fail to login",
+			"error":   err.Error(),
+		})
 	}
 
 	acc := new(fiber.Cookie)
@@ -90,6 +99,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "login sucessfully ",
+		"error":   " ",
 	})
 }
 
@@ -114,6 +124,7 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "logged out successfully",
+		"error":   " ",
 	})
 }
 
@@ -143,18 +154,20 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 
 // Create godoc
 // @Summary      Create Item
+// @Description  Add a new item to the store
 // @Tags         items
 // @Accept       json
 // @Produce      json
-// @Param        request body adapters.CreateItemRequest true "Item Details"
-// @Success      201 {object} adapters.AuthResponse
-// @Failure      400 {object} adapters.ErrorResponse
+// @Param        request body      CreateItemRequest  true "Item Details"
+// @Success      201     {string}  string "Created"
+// @Failure      400     {object}  map[string]string "error: invalid request body"
+// @Failure      500     {object}  map[string]string "error: failed to create item"
 // @Router       /items [post]
 func (h *ItemHandler) Create(c *fiber.Ctx) error {
 
 	var req struct {
-		ProductName string `json:"name"`
-		ProductDesc string `json:"desc"`
+		ProductName string `json:"productName"`
+		ProductDesc string `json:"productDesc"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -183,48 +196,40 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusCreated)
 }
 
-// ListItems godoc
+// List godoc
 // @Summary      List all items
 // @Description  Fetch all products from the database
 // @Tags         items
 // @Produce      json
-// @Success      200  {array}   entities.Item
-// @Failure      500  {object}  map[string]string
+// @Success      200  {object}  map[string]interface{} "message: [items...]"
+// @Failure      500  {object}  map[string]interface{}
 // @Router       /items [get]
 func (h *ItemHandler) List(c *fiber.Ctx) error {
-
 	items, err := h.uc.GetAllItems()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to fetch items",
+			"message": []interface{}{},
+			"error":   err,
 		})
 	}
 
-	return c.JSON(items)
+	return c.JSON(fiber.Map{
+		"message": items,
+		"error":   "",
+	})
 }
-
-// func (h *ItemHandler) List(c *fiber.Ctx) error {
-// 	userID := c.Locals("user_id").(uint)
-
-// 	items, err := h.uc.GetMyItems(userID)
-// 	if err != nil {
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"error": "failed to fetch items",
-// 		})
-// 	}
-
-// 	return c.JSON(items)
-// }
 
 // Update godoc
 // @Summary      Update Item
+// @Description  Update product name and description by ID
 // @Tags         items
 // @Accept       json
 // @Produce      json
-// @Param        id      path int                       true "Product ID" example(1)
-// @Param        request body adapters.UpdateItemRequest true "New Item Data"
-// @Success      200 {object} adapters.AuthResponse
-// @Failure      404 {object} adapters.ErrorResponse
+// @Param        id      path      int          true  "Product ID" example(1)
+// @Param        request body      UpdateItemRequest  true  "New Item Data"
+// @Success      200     {object}  map[string]string "message: item updated"
+// @Failure      400     {object}  map[string]string "error: Invalid ID format"
+// @Failure      403     {object}  map[string]string "error: forbidden"
 // @Router       /items/{id} [put]
 func (h *ItemHandler) Update(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
@@ -234,55 +239,58 @@ func (h *ItemHandler) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	// idParam := c.Params("id")
-	// itemID, err := strconv.Atoi(idParam)
-	// if err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "invalid item id",
-	// 	})
-	// }
-
 	var req struct {
-		ProductName string `json:"name"`
-		ProductDesc string `json:"desc"`
+		ProductName string `json:"productName"`
+		ProductDesc string `json:"productDesc"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid request body",
+			"message": " ",
+			"error":   err,
 		})
 	}
 
 	if err := h.uc.UpdateItem(uint(id), req.ProductName, req.ProductDesc); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "item not found",
+			"message": " ",
+			"error":   err,
 		})
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(fiber.Map{
+		"message": "item updated",
+		"error":   "",
+	})
 }
 
-// DeleteItem godoc
+// Delete godoc
 // @Summary      Delete an item
 // @Description  Remove a product by ID
 // @Tags         items
-// @Param        id   path      int  true  "Item ID"
-// @Success      204  {string}  string "No Content"
-// @Failure      404  {object}  map[string]string
+// @Param        id   path      int  true  "Item ID" example(1)
+// @Success      200  {object}  map[string]string "message: item deleted"
+// @Failure      400  {object}  map[string]string "error: Invalid ID format"
+// @Failure      403  {object}  map[string]string "error: forbidden"
 // @Router       /items/{id} [delete]
 func (h *ItemHandler) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
+			"message": " ",
+			"error":   "Invalid ID format",
 		})
 	}
 
 	if err := h.uc.DeleteItem(uint(id)); err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": err.Error(),
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": " ",
+			"error":   err,
 		})
 	}
 
-	return c.SendStatus(fiber.StatusNoContent)
+	return c.JSON(fiber.Map{
+		"message": "item deleted",
+		"error":   "",
+	})
 }
