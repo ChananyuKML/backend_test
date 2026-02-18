@@ -192,8 +192,10 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 			"error": "failed to create item",
 		})
 	}
-
-	return c.SendStatus(fiber.StatusCreated)
+	return c.JSON(fiber.Map{
+		"message": "item created",
+		"error":   "",
+	})
 }
 
 // List godoc
