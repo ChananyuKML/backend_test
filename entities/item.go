@@ -1,9 +1,10 @@
 package entities
 
 type Item struct {
-	ProductID   uint   `gorm:"primaryKey;column:product_id" json:"productId"`
-	ProductName string `gorm:"index" json:"productName"`
-	ProductDesc string `json:"productDesc"`
+	ProductID       uint   `gorm:"primaryKey;column:product_id" json:"productId"`
+	ProductName     string `gorm:"index" json:"productName"`
+	ProductDesc     string `json:"productDesc"`
+	ProductImageKey string
 }
 
 type HoleInfo struct {

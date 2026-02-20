@@ -164,10 +164,17 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 // @Failure      500     {object}  map[string]string "error: failed to create item"
 // @Router       /items [post]
 func (h *ItemHandler) Create(c *fiber.Ctx) error {
-
 	var req struct {
 		ProductName string `json:"productName"`
 		ProductDesc string `json:"productDesc"`
+	}
+
+	imageKey := c.Cookies("last_uploaded_image")
+	if imageKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "",
+			"error":   "no uploaded image found in session",
+		})
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -187,13 +194,13 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.uc.CreateItem(req.ProductName, req.ProductDesc); err != nil {
+	if err := h.uc.CreateItem(req.ProductName, req.ProductDesc, c.UserContext(), imageKey); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to create item",
 		})
 	}
 	return c.JSON(fiber.Map{
-		"message": "item created",
+		"message": "item registered",
 		"error":   "",
 	})
 }
@@ -295,4 +302,79 @@ func (h *ItemHandler) Delete(c *fiber.Ctx) error {
 		"message": "item deleted",
 		"error":   "",
 	})
+}
+
+func (h *ItemHandler) Upload(c *fiber.Ctx) error {
+	// 1. Get the file from the multipart form
+	fileHeader, err := c.FormFile("image")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "",
+			"error":   "Image is required: " + err.Error(),
+		})
+	}
+
+	// 2. Open the file to get the io.Reader
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "",
+			"error":   "Failed to process image file",
+		})
+	}
+	defer file.Close()
+
+	// 3. Call your Use Case
+	// It handles the unique filename generation and the Minio Repo call
+	imageKey, err := h.uc.UploadImage(
+		c.UserContext(),
+		file,
+		fileHeader.Size,
+		fileHeader.Header.Get("Content-Type"),
+	)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "",
+			"error":   err.Error(),
+		})
+	}
+
+	// 4. Store the image key in a Cookie
+	// This allows the 'Register' endpoint to find the image later
+	cookie := &fiber.Cookie{
+		Name:     "last_uploaded_image",
+		Value:    imageKey,
+		Expires:  time.Now().Add(30 * time.Minute),
+		HTTPOnly: true, // Secure: JS cannot access this cookie
+		SameSite: "Lax",
+	}
+	c.Cookie(cookie)
+
+	// 5. Return the expected JSON format
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": imageKey, // "products-images/177...jpg"
+		"error":   "",
+	})
+}
+
+func (h *ItemHandler) GetUpload(c *fiber.Ctx) error {
+	// 1. Get the key from the cookie
+	imageKey := c.Cookies("last_uploaded_image")
+	if imageKey == "" {
+		return c.Status(fiber.StatusNotFound).SendString("No image uploaded in this session")
+	}
+
+	// 2. Get the stream from Use Case
+	stream, err := h.uc.GetImageStream(c.UserContext(), imageKey)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving image")
+	}
+
+	// 3. Set the correct Content-Type (you could store this in the cookie too)
+	// For now, we'll tell the browser it's a JPEG
+	c.Set("Content-Type", "image/jpeg")
+
+	// 4. Stream the file directly to the browser
+	return c.SendStream(stream)
 }

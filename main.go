@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"hole/adapters"
+	"hole/config"
 	_ "hole/docs" // IMPORTANT
 	"hole/entities"
 	"hole/repository"
@@ -81,6 +82,10 @@ func main() {
 
 	fmt.Println("Database migration completed!")
 
+	minioClient := config.ConnectMinio()
+	bucketName := os.Getenv("MINIO_BUCKET")
+	fileRepo := repository.NewMinioRepo(minioClient, bucketName)
+
 	userRepo := repository.NewUserRepository(db)
 	refreshRepo := repository.NewRefreshTokenRepository(db)
 	itemRepo := repository.NewItemRepository(db)
@@ -94,6 +99,7 @@ func main() {
 
 	itemUC := use_cases.NewItemUseCase(
 		itemRepo,
+		fileRepo,
 	)
 
 	itemHandler := adapters.NewItemHandler(itemUC)
@@ -104,15 +110,15 @@ func main() {
 
 	app.Use(adapters.Protected(jwtService))
 
+	app.Post("/upload", itemHandler.Upload)
+	app.Get("/upload", itemHandler.GetUpload)
+
 	app.Post("/items", itemHandler.Create)
 	app.Get("/items", itemHandler.List)
 	app.Put("/items/:id", itemHandler.Update)
 	app.Delete("/items/:id", itemHandler.Delete)
 
 	app.Post("/logout", authHandler.Logout)
-	// app.Post("/box", itemHandler.List)
 
-	// insp := app.Group("/inspect")
-	// insp.Post("/:id", itemHandler.Create)
 	app.Listen(":8000")
 }
