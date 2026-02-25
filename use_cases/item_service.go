@@ -14,7 +14,7 @@ type ItemRepository interface {
 	Create(item *entities.Item) error
 	FindByOwnerID(ownerID uint) ([]*entities.Item, error)
 	// FindByIDAndOwner(id, ownerID uint) (*entities.Item, error)
-	Update(id uint, name, desc string) error
+	Update(id uint, name, desc, img string) error
 	Delete(id uint) error
 	ListItem() ([]*entities.Item, error)
 }
@@ -51,8 +51,8 @@ func (uc *ItemUseCase) GetAllItems() ([]*entities.Item, error) {
 	return uc.repo.ListItem()
 }
 
-func (uc *ItemUseCase) UpdateItem(id uint, name, desc string) error {
-	return uc.repo.Update(id, name, desc)
+func (uc *ItemUseCase) UpdateItem(id uint, name, desc, img string) error {
+	return uc.repo.Update(id, name, desc, img)
 }
 
 func (uc *ItemUseCase) DeleteItem(id uint) error {

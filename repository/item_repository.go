@@ -43,13 +43,14 @@ func (r *ItemRepositoryPostgres) FindByOwnerID(ownerID uint) ([]*entities.Item, 
 	return items, err
 }
 
-func (r *ItemRepositoryPostgres) Update(id uint, name string, desc string) error {
+func (r *ItemRepositoryPostgres) Update(id uint, name, desc, img string) error {
 
 	result := r.db.Model(&entities.Item{}).
 		Where("product_id = ?", id).
 		Updates(entities.Item{
-			ProductName: name,
-			ProductDesc: desc,
+			ProductName:     name,
+			ProductDesc:     desc,
+			ProductImageKey: img,
 		})
 
 	if result.Error != nil {

@@ -250,8 +250,9 @@ func (h *ItemHandler) Update(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		ProductName string `json:"productName"`
-		ProductDesc string `json:"productDesc"`
+		ProductName     string `json:"productName"`
+		ProductDesc     string `json:"productDesc"`
+		ProductImageKey string `json:"productImageKey"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
@@ -261,7 +262,7 @@ func (h *ItemHandler) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.uc.UpdateItem(uint(id), req.ProductName, req.ProductDesc); err != nil {
+	if err := h.uc.UpdateItem(uint(id), req.ProductName, req.ProductDesc, req.ProductImageKey); err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": " ",
 			"error":   err,

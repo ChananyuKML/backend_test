@@ -6,7 +6,7 @@ type Item struct {
 	ProductID       uint   `gorm:"primaryKey;column:product_id" json:"productId"`
 	ProductName     string `gorm:"index" json:"productName"`
 	ProductDesc     string `json:"productDesc"`
-	ProductImageKey string
+	ProductImageKey string `json:"productImageKey"`
 }
 
 type HoleInfo struct {
