@@ -165,21 +165,21 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 // @Router       /items [post]
 func (h *ItemHandler) Create(c *fiber.Ctx) error {
 	var req struct {
-		ProductName string `json:"productName"`
-		ProductDesc string `json:"productDesc"`
-	}
-
-	imageKey := c.Cookies("last_uploaded_image")
-	if imageKey == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "",
-			"error":   "no uploaded image found in session",
-		})
+		ProductName     string `json:"productName"`
+		ProductDesc     string `json:"productDesc"`
+		ProductImageKey string `json:"productImageKey"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "invalid request body",
+		})
+	}
+
+	if req.ProductImageKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "",
+			"error":   "no uploaded image found in session",
 		})
 	}
 
@@ -194,7 +194,7 @@ func (h *ItemHandler) Create(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.uc.CreateItem(req.ProductName, req.ProductDesc, c.UserContext(), imageKey); err != nil {
+	if err := h.uc.CreateItem(req.ProductName, req.ProductDesc, c.UserContext(), req.ProductImageKey); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to create item",
 		})
@@ -359,22 +359,19 @@ func (h *ItemHandler) Upload(c *fiber.Ctx) error {
 }
 
 func (h *ItemHandler) GetUpload(c *fiber.Ctx) error {
-	// 1. Get the key from the cookie
-	imageKey := c.Cookies("last_uploaded_image")
-	if imageKey == "" {
+
+	imgPath := c.Params("imageKey")
+
+	if imgPath == "" {
 		return c.Status(fiber.StatusNotFound).SendString("No image uploaded in this session")
 	}
 
-	// 2. Get the stream from Use Case
-	stream, err := h.uc.GetImageStream(c.UserContext(), imageKey)
+	stream, err := h.uc.GetImageStream(c.UserContext(), imgPath)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving image")
 	}
 
-	// 3. Set the correct Content-Type (you could store this in the cookie too)
-	// For now, we'll tell the browser it's a JPEG
 	c.Set("Content-Type", "image/jpeg")
 
-	// 4. Stream the file directly to the browser
 	return c.SendStream(stream)
 }
