@@ -21,7 +21,7 @@ type ItemRepository interface {
 
 type FileRepository interface {
 	Upload(ctx context.Context, fileName string, file io.Reader, size int64, contentType string) (minio.UploadInfo, error)
-	GetObject(ctx context.Context, fileName string) (io.Reader, error)
+	GetObject(ctx context.Context, fileName string) (*entities.FileStream, error)
 }
 
 type ItemUseCase struct {
@@ -60,19 +60,18 @@ func (uc *ItemUseCase) DeleteItem(id uint) error {
 }
 
 func (u *ItemUseCase) UploadImage(ctx context.Context, file io.Reader, size int64, contentType string) (string, error) {
+	// Better to use a specific extension or detect it from contentType
 	fileName := fmt.Sprintf("products-images/%d.jpg", time.Now().UnixNano())
-	info, err := u.fileRepo.Upload(ctx, fileName, file, size, contentType)
 
+	_, err := u.fileRepo.Upload(ctx, fileName, file, size, contentType)
 	if err != nil {
 		return "", err
 	}
 
-	return info.Key, nil
+	return fileName, nil // Return the full path/name used
 }
 
-func (u *ItemUseCase) GetImageStream(ctx context.Context, imageKey string) (io.Reader, error) {
-	if imageKey == "" {
-		return nil, fmt.Errorf("empty image key")
-	}
-	return u.fileRepo.GetObject(ctx, imageKey)
+func (u *ItemUseCase) GetImageStream(ctx context.Context, fileName string) (*entities.FileStream, error) {
+
+	return u.fileRepo.GetObject(ctx, fileName)
 }

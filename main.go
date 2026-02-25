@@ -111,7 +111,7 @@ func main() {
 	app.Use(adapters.Protected(jwtService))
 
 	app.Post("/image", itemHandler.Upload)
-	app.Get("/image/:imageKey", itemHandler.GetUpload)
+	app.Get("/image/*", itemHandler.GetUpload)
 
 	app.Post("/items", itemHandler.Create)
 	app.Get("/items", itemHandler.List)

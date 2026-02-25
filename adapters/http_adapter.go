@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"hole/use_cases"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -359,19 +360,22 @@ func (h *ItemHandler) Upload(c *fiber.Ctx) error {
 }
 
 func (h *ItemHandler) GetUpload(c *fiber.Ctx) error {
-
-	imgPath := c.Params("imageKey")
-
-	if imgPath == "" {
-		return c.Status(fiber.StatusNotFound).SendString("No image uploaded in this session")
+	// 1. Get the path after /images/
+	objectName := c.Params("*")
+	if objectName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No filename provided"})
 	}
 
-	stream, err := h.uc.GetImageStream(c.UserContext(), imgPath)
+	// 2. Use c.Context() if c.UserContext() feels unstable with the stream
+	file, err := h.uc.GetImageStream(c.Context(), objectName)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving image")
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "File not found in MinIO"})
 	}
 
-	c.Set("Content-Type", "image/jpeg")
+	// 3. Explicitly set headers
+	c.Set("Content-Type", file.ContentType)
+	c.Set("Content-Length", strconv.FormatInt(file.Size, 10))
 
-	return c.SendStream(stream)
+	// 4. SendStream will handle closing the MinIO object automatically
+	return c.SendStream(file.Reader)
 }
